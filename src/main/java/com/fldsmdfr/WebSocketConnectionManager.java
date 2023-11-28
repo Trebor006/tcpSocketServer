@@ -1,8 +1,6 @@
 package com.fldsmdfr;
 
-import com.fldsmdfr.event.MyClassEventManager;
-import com.fldsmdfr.event.MyEvent;
-import com.fldsmdfr.event.MyEventListener;
+import com.fldsmdfr.event.*;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -16,13 +14,17 @@ public class WebSocketConnectionManager extends Thread implements MyEventListene
     private volatile HashMap<String, WebSocketHandler> clients;
     private volatile boolean started;
 
-    private MyClassEventManager myClassEventManager;
+    private MyClassEventManager myClassEventManager; // Notificaciones del Cliente al Manejador de conecciones
+    private EventServerManager eventServerManager; // Notificacion a la vista
 
     public WebSocketConnectionManager() {
         myClassEventManager = new MyClassEventManager();
         myClassEventManager.addMyEventListener(this);
     }
 
+    public void setEventServerManager(EventServerManager eventServerManager) {
+        this.eventServerManager = eventServerManager;
+    }
 
     @Override
     public void run() {
@@ -61,45 +63,97 @@ public class WebSocketConnectionManager extends Thread implements MyEventListene
 
     @Override
     public void myEventOccurred(MyEvent evt) {
-        JSONObject data = (JSONObject) evt.getSource();
-        String action =data.getString("action");
+        JSONObject data = evt.getData();
+        String action = data.getString("action");
         String id = data.getString("id");
         WebSocketHandler client = clients.get(id);
         switch (action) {
-            case WebSocketHandler.ACTION_USERNAME : {
-                JSONObject listClients =  new JSONObject();
+            case WebSocketHandler.ACTION_USERNAME: {
+                JSONObject listClients = new JSONObject();
                 for (var entry : clients.entrySet()) {
-                    listClients.put(entry.getKey() , entry.getValue().userName);
-                    if(!id.equals(entry.getKey())) {
+                    listClients.put(entry.getKey(), entry.getValue().userName);
+                    if (!id.equals(entry.getKey())) {
                         entry.getValue().sendConnectClient(id, client.userName);
                     }
                 }
                 client.sendListClients(listClients.toString());
+                this.notifyEventServer("Nuevo Cliente conectado " + id + " - " + client.userName);
                 break;
             }
             case WebSocketHandler.ACTION_MESSAGE: {
                 String target = data.getString("target");
                 String message = data.getString("message");
-                if(target.equals("server")) {
+                this.notifyEventServer(data.toString());
+                if (target.equals("server")) {
                     return;
                 }
-                if(target.equals("all")) {
+                if (target.equals("all")) {
                     for (var entry : clients.entrySet()) {
-                        if(!id.equals(entry.getKey())) {
+                        if (!id.equals(entry.getKey())) {
                             entry.getValue().sendMessage(id, target, message);
                         }
                     }
                 }
 
                 WebSocketHandler clientTarget = clients.get(target);
-                if(clientTarget != null) {
+                if (clientTarget != null) {
                     clientTarget.sendMessage(id, target, message);
 
                 }
                 break;
             }
+            case WebSocketHandler.ACTION_FILE: {
+                this.notifyEventServer(data.toString());
+//                String target = data.getString("target");
+//                String message = data.getString("message");
+//                if (target.equals("server")) {
+//                    return;
+//                }
+//                if (target.equals("all")) {
+//                    for (var entry : clients.entrySet()) {
+//                        if (!id.equals(entry.getKey())) {
+//                            entry.getValue().sendMessage(id, target, message);
+//                        }
+//                    }
+//                }
+//
+//                WebSocketHandler clientTarget = clients.get(target);
+//                if (clientTarget != null) {
+//                    clientTarget.sendMessage(id, target, message);
+//
+//                }
+                break;
+            }
+            case WebSocketHandler.ACTION_DISCONNECT_CLIENT: {
+                clients.remove(id);
+                for (var entry : clients.entrySet()) {
+                    if (!id.equals(entry.getKey())) {
+                        entry.getValue().sendDisconnectClient(id);
+                    }
+                }
+                this.notifyEventServer("Cliente Desconectado " + id + " - " + client.userName);
+                break;
+            }
         }
     }
 
+    public JSONObject clientsToJSONObject() {
+        JSONObject listClients = new JSONObject();
+        for (var entry : clients.entrySet()) {
+            listClients.put(entry.getKey(), entry.getValue().userName);
+        }
+        return listClients;
+    }
 
+
+    public void notifyEventServer(String log) {
+        if (eventServerManager == null) {
+            return;
+        }
+        JSONObject data = new JSONObject();
+        data.put("isStarted", this.started);
+        data.put("clientsConnected", this.clientsToJSONObject());
+        data.put("log", log);
+        eventServerManager.fireEventServer(new EventServer(this, data));
+    }
 }

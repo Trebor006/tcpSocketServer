@@ -15,6 +15,7 @@ public class WebSocketHandler extends Thread {
     private BufferedReader in;
     private DataInputStream dis;
     private DataOutputStream dout;
+    BufferedInputStream bis;
 
     public static final String ACTION_USERNAME = "USERNAME";
     public static final String ACTION_CONNECT_CLIENT = "CONNECT_CLIENT";
@@ -38,13 +39,20 @@ public class WebSocketHandler extends Thread {
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             dis = new DataInputStream(clientSocket.getInputStream());
             dout = new DataOutputStream(clientSocket.getOutputStream());
+            bis = new BufferedInputStream(clientSocket.getInputStream());
 
-            while(true) {
+            while (true) {
                 String action = in.readLine();
                 this.executeAction(action);
             }
 
         } catch (IOException e) {
+            JSONObject data = new JSONObject();
+            data.put("action", ACTION_DISCONNECT_CLIENT);
+            data.put("userName", this.userName);
+            data.put("id", this.id);
+            data.put("source", id);
+            myClassEventManager.fireMyEvent(new MyEvent(this, data));
             e.printStackTrace();
         }
     }
@@ -52,16 +60,16 @@ public class WebSocketHandler extends Thread {
     private void executeAction(String action) {
         System.out.println("Accion recibida: " + action);
         switch (action) {
-            case ACTION_USERNAME : {
+            case ACTION_USERNAME: {
                 try {
                     this.userName = this.in.readLine();
                     System.out.println("userName: " + this.userName);
-                    JSONObject data =  new JSONObject();
+                    JSONObject data = new JSONObject();
                     data.put("action", ACTION_USERNAME);
                     data.put("userName", this.userName);
                     data.put("id", this.id);
                     data.put("source", id);
-                    myClassEventManager.fireMyEvent(new MyEvent(data));
+                    myClassEventManager.fireMyEvent(new MyEvent(this, data));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -73,13 +81,44 @@ public class WebSocketHandler extends Thread {
                     String message = this.in.readLine();
                     System.out.println("target: " + target);
                     System.out.println("message: " + message);
-                    JSONObject data =  new JSONObject();
+                    JSONObject data = new JSONObject();
                     data.put("action", ACTION_MESSAGE);
                     data.put("id", this.id);
                     data.put("source", id);
                     data.put("target", target);
                     data.put("message", message);
-                    myClassEventManager.fireMyEvent(new MyEvent(data));
+                    myClassEventManager.fireMyEvent(new MyEvent(this, data));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                break;
+            }
+            case ACTION_FILE: {
+                try {
+                    String target = this.in.readLine();
+                    String fileName = this.in.readLine();
+                    System.out.println("fileName: " + fileName);
+                    fileName = fileName.substring(fileName.indexOf(File.separator) + 1, fileName.length());
+                    System.out.println("fileName cast: " + fileName);
+                    byte[] receivedData = new byte[1024];
+                    int sizeReceive;
+
+                    String pathFile = FTPConfiguration.rootDirectory + File.separator + fileName;
+
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(pathFile));
+                    while ((sizeReceive = bis.read(receivedData)) != -1) {
+                        bos.write(receivedData, 0, sizeReceive);
+                    }
+                    bos.close();
+
+                    JSONObject data = new JSONObject();
+                    data.put("action", ACTION_FILE);
+                    data.put("id", this.id);
+                    data.put("source", id);
+                    data.put("target", target);
+                    data.put("file", pathFile);
+                    myClassEventManager.fireMyEvent(new MyEvent(this, data));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -99,7 +138,7 @@ public class WebSocketHandler extends Thread {
     }
 
     public void sendConnectClient(String clientIdNew, String clientUserNameNew) {
-        System.out.println("Enviando clientNew: " + clientIdNew + " - "  + clientUserNameNew);
+        System.out.println("Enviando clientNew: " + clientIdNew + " - " + clientUserNameNew);
         out.println(ACTION_CONNECT_CLIENT);
         sleepClient(100);
         out.println(clientIdNew);
@@ -108,8 +147,16 @@ public class WebSocketHandler extends Thread {
         sleepClient(100);
     }
 
+    public void sendDisconnectClient(String clientId) {
+        System.out.println("Enviando client disconect: " + clientId);
+        out.println(ACTION_DISCONNECT_CLIENT);
+        sleepClient(100);
+        out.println(clientId);
+        sleepClient(100);
+    }
+
     public void sendMessage(String source, String target, String message) {
-        System.out.println("Enviando clientNew: " + source + " - "  + target + " - "  + message);
+        System.out.println("Enviando clientNew: " + source + " - " + target + " - " + message);
         out.println(ACTION_MESSAGE);
         sleepClient(100);
         out.println(source);
