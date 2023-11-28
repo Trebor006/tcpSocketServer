@@ -3,7 +3,7 @@ package com.fldsmdfr.event;
 
 import javax.swing.event.EventListenerList;
 
-public class MyClass {
+public class MyClassEventManager {
   protected EventListenerList listenerList = new EventListenerList();
 
   public void addMyEventListener(MyEventListener listener) {

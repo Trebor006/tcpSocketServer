@@ -1,6 +1,6 @@
 package com.fldsmdfr;
 
-import com.fldsmdfr.event.MyClass;
+import com.fldsmdfr.event.MyClassEventManager;
 import com.fldsmdfr.event.MyEvent;
 import com.fldsmdfr.event.MyEventListener;
 import org.json.JSONObject;
@@ -16,11 +16,11 @@ public class WebSocketConnectionManager extends Thread implements MyEventListene
     private volatile HashMap<String, WebSocketHandler> clients;
     private volatile boolean started;
 
-    private MyClass myClass;
+    private MyClassEventManager myClassEventManager;
 
     public WebSocketConnectionManager() {
-        myClass = new MyClass();
-        myClass.addMyEventListener(this);
+        myClassEventManager = new MyClassEventManager();
+        myClassEventManager.addMyEventListener(this);
     }
 
 
@@ -42,7 +42,7 @@ public class WebSocketConnectionManager extends Thread implements MyEventListene
     }
 
     private void acceptClient(Socket clientSocket, String id) {
-        WebSocketHandler client = new WebSocketHandler(clientSocket, id, myClass);
+        WebSocketHandler client = new WebSocketHandler(clientSocket, id, myClassEventManager);
         System.out.println("Cliente conectado desde " + clientSocket.getInetAddress().getHostAddress());
         clients.put(id, client);
         client.start();

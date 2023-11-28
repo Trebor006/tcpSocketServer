@@ -1,6 +1,6 @@
 package com.fldsmdfr;
 
-import com.fldsmdfr.event.MyClass;
+import com.fldsmdfr.event.MyClassEventManager;
 import com.fldsmdfr.event.MyEvent;
 import org.json.JSONObject;
 
@@ -24,12 +24,12 @@ public class WebSocketHandler extends Thread {
     public static final String ACTION_FILE = "FILE";
 
 
-    private MyClass myClass;
+    private MyClassEventManager myClassEventManager;
 
-    public WebSocketHandler(Socket socket, String id, MyClass myClass) {
+    public WebSocketHandler(Socket socket, String id, MyClassEventManager myClassEventManager) {
         this.clientSocket = socket;
         this.id = id;
-        this.myClass = myClass;
+        this.myClassEventManager = myClassEventManager;
     }
 
     public void run() {
@@ -61,7 +61,7 @@ public class WebSocketHandler extends Thread {
                     data.put("userName", this.userName);
                     data.put("id", this.id);
                     data.put("source", id);
-                    myClass.fireMyEvent(new MyEvent(data));
+                    myClassEventManager.fireMyEvent(new MyEvent(data));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -79,7 +79,7 @@ public class WebSocketHandler extends Thread {
                     data.put("source", id);
                     data.put("target", target);
                     data.put("message", message);
-                    myClass.fireMyEvent(new MyEvent(data));
+                    myClassEventManager.fireMyEvent(new MyEvent(data));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
