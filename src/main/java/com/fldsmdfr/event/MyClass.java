@@ -14,7 +14,7 @@ public class MyClass {
     listenerList.remove(MyEventListener.class, listener);
   }
 
-  void fireMyEvent(MyEvent evt) {
+  public void fireMyEvent(MyEvent evt) {
     Object[] listeners = listenerList.getListenerList();
     for (int i = 0; i < listeners.length; i = i + 2) {
       if (listeners[i] == MyEventListener.class) {
