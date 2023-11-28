@@ -98,19 +98,31 @@ public class WebSocketHandler extends Thread {
                 try {
                     String target = this.in.readLine();
                     String fileName = this.in.readLine();
+                    long fileLength = Long.parseLong(this.in.readLine());
                     System.out.println("fileName: " + fileName);
                     fileName = fileName.substring(fileName.indexOf(File.separator) + 1, fileName.length());
                     System.out.println("fileName cast: " + fileName);
-                    byte[] receivedData = new byte[1024];
+                    System.out.println("fileLength: " + fileLength);
+                    byte[] receivedData = new byte[8192];
                     int sizeReceive;
 
                     String pathFile = FTPConfiguration.rootDirectory + File.separator + fileName;
 
                     BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(pathFile));
+                    long receiveLength = 0;
                     while ((sizeReceive = bis.read(receivedData)) != -1) {
                         bos.write(receivedData, 0, sizeReceive);
+                        receiveLength += sizeReceive;
+                        System.out.println("fileLength: " + fileLength);
+                        System.out.println("receiveLength: " + receiveLength);
+                        System.out.println("sizeReceive: " + sizeReceive);
+                        if(receiveLength >= fileLength) {
+                            break;
+                        }
                     }
                     bos.close();
+                    System.out.println("file guardado " + pathFile);
+
 
                     JSONObject data = new JSONObject();
                     data.put("action", ACTION_FILE);
@@ -118,6 +130,7 @@ public class WebSocketHandler extends Thread {
                     data.put("source", id);
                     data.put("target", target);
                     data.put("file", pathFile);
+                    data.put("fileLength", fileLength);
                     myClassEventManager.fireMyEvent(new MyEvent(this, data));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
