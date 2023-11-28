@@ -10,6 +10,7 @@ import org.json.JSONObject;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
 public class WebSocketServerView implements EventServerListener {
     private JButton buttonStatus;
@@ -26,6 +27,7 @@ public class WebSocketServerView implements EventServerListener {
     EventServerManager eventServerManager;
 
     public WebSocketServerView() {
+        crateRootDirectory();
         textFieldPort.setText(FTPConfiguration.port + "");
         textFieldPath.setText(FTPConfiguration.rootDirectory);
 
@@ -105,5 +107,16 @@ public class WebSocketServerView implements EventServerListener {
         textAreaLog.append(log + '\n');
 
 
+    }
+
+    public void crateRootDirectory() {
+        File directorio = new File(FTPConfiguration.rootDirectory);
+        if (!directorio.exists()) {
+            if (directorio.mkdirs()) {
+                System.out.println("Directorio creado");
+            } else {
+                System.out.println("Error al crear directorio");
+            }
+        }
     }
 }

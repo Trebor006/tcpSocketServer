@@ -56,6 +56,7 @@ public class WebSocketServer {
             connectionManager.notifyEventServer(log);
         } catch (IOException e) {
             e.printStackTrace();
+            this.started = false;
             String log = "Error al iniciar Servidor WebSocket en el puerto " + this.port;
             System.out.println(log);
             connectionManager.notifyEventServer(log);
