@@ -97,11 +97,11 @@ public class WebSocketConnectionManager extends Thread implements EventProcessPa
                 JSONObject data = new JSONObject();
                 data.put("id", id);
                 data.put("userName", client.userName);
-                DataPackage dataPackageSend = new DataPackage("server", null, data.toString(), Protocol.ACTION_CONNECT_CLIENT);
+                DataPackage dataPackageSend = new DataPackage("server", null, data.toString(), Protocol.ACTION_CONNECT_CLIENT, null);
                 this.sendAll(dataPackageSend, id);
 
                 JSONObject listClients = clientsToJSONObject();
-                dataPackageSend = new DataPackage("server", id, listClients.toString(), Protocol.ACTION_LIST_CLIENTS);
+                dataPackageSend = new DataPackage("server", id, listClients.toString(), Protocol.ACTION_LIST_CLIENTS, null);
                 client.send(dataPackageSend.toString());
 
                 this.notifyEventServer("Nuevo Cliente conectado " + id + " - " + client.userName);
@@ -115,7 +115,7 @@ public class WebSocketConnectionManager extends Thread implements EventProcessPa
                     return;
                 }
 
-                DataPackage dataPackageSend = new DataPackage(dataPackage.getSource(), null, dataPackage.getData(), dataPackage.getAction());
+                DataPackage dataPackageSend = new DataPackage(dataPackage.getSource(), null, dataPackage.getData(), dataPackage.getAction(), null);
                 if (target.equals("all")) {
                     this.sendAll(dataPackageSend, id);
                     return;
@@ -148,7 +148,7 @@ public class WebSocketConnectionManager extends Thread implements EventProcessPa
             }
             case Protocol.ACTION_DISCONNECT_CLIENT: {
                 clients.remove(id);
-                DataPackage dataPackageSend = new DataPackage("server", null, "", Protocol.ACTION_DISCONNECT_CLIENT);
+                DataPackage dataPackageSend = new DataPackage("server", null, "", Protocol.ACTION_DISCONNECT_CLIENT, null);
                 this.sendAll(dataPackageSend, "");
 
                 this.notifyEventServer("Cliente Desconectado " + id + " - " + client.userName);

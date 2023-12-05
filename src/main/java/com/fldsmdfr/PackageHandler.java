@@ -44,7 +44,7 @@ public class PackageHandler extends Thread {
                 String pathFile = FTPConfiguration.rootDirectory + File.separator + fileName;
                 fileInformation.filePathServer = pathFile;
 
-                DataPackage dataPackageSend = new DataPackage(dataPackage.getSource(), dataPackage.getTarget(), fileInformation.toString(), Protocol.ACTION_FILE);
+                DataPackage dataPackageSend = new DataPackage(dataPackage.getSource(), dataPackage.getTarget(), fileInformation.toString(), Protocol.ACTION_FILE, null);
                 notifyEventProcessPackage(dataPackageSend);
                 break;
             }
@@ -52,10 +52,10 @@ public class PackageHandler extends Thread {
                 try {
                     FileInformation fileInformation = new FileInformation();
                     fileInformation.toFileInformation(new JSONObject(dataPackage.getData()));
-
+                    fileInformation.dataPart = dataPackage.getDataPart();
                     FileInformation fileInformationOut = FileTransfer.writePart(fileInformation);
 
-                    DataPackage dataPackageSend = new DataPackage(dataPackage.getSource(), dataPackage.getTarget(), fileInformationOut.toString(), Protocol.ACTION_FILE_PART);
+                    DataPackage dataPackageSend = new DataPackage(dataPackage.getSource(), dataPackage.getTarget(), fileInformationOut.toString(), Protocol.ACTION_FILE_PART, null);
                     if(fileInformationOut.sizeSend >= fileInformationOut.size) {
                         dataPackageSend.setAction(Protocol.ACTION_FILE_END);
                     }

@@ -39,7 +39,7 @@ public class WebSocketHandler extends Thread {
 
         } catch (IOException e) {
             // todo  desconectar
-            DataPackage dataPackage =  new DataPackage(this.id, "all", this.id, Protocol.ACTION_DISCONNECT_CLIENT);
+            DataPackage dataPackage =  new DataPackage(this.id, "all", this.id, Protocol.ACTION_DISCONNECT_CLIENT, null);
             this.notifyEventReceivePackage(dataPackage.toString());
             e.printStackTrace();
         }
